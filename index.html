@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Journal — Intermarket Regime Strategy</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; color: #f0f6fc; }
+  .sub { font-size: 13px; color: #8b949e; margin-bottom: 20px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin-bottom: 12px; color: #58a6ff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  label { display: block; font-size: 12px; color: #8b949e; margin-bottom: 4px; }
+  input, select, textarea { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px; color: #c9d1d9; font-size: 14px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #58a6ff; }
+  textarea { resize: vertical; min-height: 60px; }
+  button { background: #238636; color: #fff; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; cursor: pointer; margin-top: 10px; }
+  button:hover { background: #2ea043; }
+  button.danger { background: #da3633; }
+  button.danger:hover { background: #f85149; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stat { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; text-align: center; }
+  .stat .val { font-size: 20px; font-weight: 700; color: #f0f6fc; }
+  .stat .lbl { font-size: 11px; color: #8b949e; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px; border-bottom: 2px solid #30363d; color: #8b949e; font-weight: 600; }
+  td { padding: 8px; border-bottom: 1px solid #21262d; }
+  tr:hover td { background: #1c2128; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+  .badge.yes { background: #1a3a2a; color: #3fb950; }
+  .badge.no { background: #3a1a1a; color: #f85149; }
+  .empty { text-align: center; color: #484f58; padding: 30px; }
+  .chart-wrap { background: #0d1117; border-radius: 6px; padding: 12px; margin-top: 12px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 140px; }
+</style>
+</head>
+<body>
+
+<h1>📊 Trading Journal</h1>
+<p class="sub">Intermarket Regime · Liquidity Sweep + FVG · R-Multiple Tracking · Rule Adherence</p>
+
+<!-- STATS -->
+<div class="stats" id="stats"></div>
+
+<!-- ADD TRADE -->
+<div class="card">
+  <h2>+ Log a Trade</h2>
+  <div class="grid">
+    <div><label>Date</label><input type="date" id="date"></div>
+    <div><label>Instrument</label>
+      <select id="instrument">
+        <option>EURUSD</option><option>USDJPY</option><option>GBPUSD</option>
+        <option>XAUUSD (Gold)</option><option>NAS100</option><option>EU50</option>
+        <option>JP225</option><option>BRENT</option><option>BTCUSD</option>
+        <option>USDX</option><option>VIX</option>
+      </select>
+    </div>
+    <div><label>Direction</label><select id="direction"><option>Long</option><option>Short</option></select></div>
+    <div><label>Regime</label>
+      <select id="regime">
+        <option>Risk-On</option><option>Risk-Off</option><option>Choppy</option><option>Trending</option><option>Unclear</option>
+      </select>
+    </div>
+    <div><label>Setup Type</label>
+      <select id="setup">
+        <option>Liquidity Sweep</option><option>FVG</option><option>Sweep + FVG</option><option>Other</option>
+      </select>
+    </div>
+    <div><label>R Multiple (e.g. 2.5 / -1)</label><input type="number" step="0.1" id="rMultiple" placeholder="2.5"></div>
+    <div><label>Rule Followed?</label><select id="ruleFollowed"><option>Yes</option><option>No</option></select></div>
+  </div>
+  <label style="margin-top:10px;">Notes (why entry, catalyst, lesson)</label>
+  <textarea id="notes" placeholder="Bot signal: ... | Human filter: ... | Entry catalyst: ... | What happened: ..."></textarea>
+  <button onclick="addTrade()">Save Trade</button>
+  <button onclick="exportData()" style="background:#1f6feb;margin-left:8px;">Export CSV</button>
+  <button onclick="clearAll()" class="danger" style="margin-left:8px;">Clear All Data</button>
+</div>
+
+<!-- EQUITY CURVE -->
+<div class="card">
+  <h2>Equity Curve (Cumulative R)</h2>
+  <div class="chart-wrap"><canvas id="equityChart" height="120"></canvas></div>
+</div>
+
+<!-- TABLE -->
+<div class="card">
+  <h2>Trade Log</h2>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>Date</th><th>Instrument</th><th>Dir</th><th>Regime</th><th>Setup</th><th>R</th><th>Rule</th><th>Notes</th><th></th></tr></thead>
+      <tbody id="tradeBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'trading_journal_v1';
+let trades = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(trades)); }
+
+function addTrade() {
+  const t = {
+    id: Date.now(),
+    date: document.getElementById('date').value || new Date().toISOString().slice(0,10),
+    instrument: document.getElementById('instrument').value,
+    direction: document.getElementById('direction').value,
+    regime: document.getElementById('regime').value,
+    setup: document.getElementById('setup').value,
+    rMultiple: parseFloat(document.getElementById('rMultiple').value) || 0,
+    ruleFollowed: document.getElementById('ruleFollowed').value,
+    notes: document.getElementById('notes').value.trim()
+  };
+  trades.push(t);
+  save();
+  document.getElementById('rMultiple').value = '';
+  document.getElementById('notes').value = '';
+  render();
+}
+
+function deleteTrade(id) {
+  if (!confirm('Delete this trade?')) return;
+  trades = trades.filter(t => t.id !== id);
+  save();
+  render();
+}
+
+function clearAll() {
+  if (!confirm('Delete ALL trade data permanently? Export first if unsure.')) return;
+  trades = [];
+  save();
+  render();
+}
+
+function exportData() {
+  if (trades.length === 0) { alert('No trades to export.'); return; }
+  const headers = ['date','instrument','direction','regime','setup','rMultiple','ruleFollowed','notes'];
+  const rows = trades.map(t => headers.map(h => `"${String(t[h]).replace(/"/g,'""')}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'trading_journal_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+function calcStats() {
+  const n = trades.length;
+  if (n === 0) return { n:0, winRate:0, avgWin:0, avgLoss:0, expectancy:0, profitFactor:0, ruleRate:0, totalR:0 };
+  const wins = trades.filter(t => t.rMultiple > 0);
+  const losses = trades.filter(t => t.rMultiple < 0);
+  const winRate = wins.length / n;
+  const avgWin = wins.length ? wins.reduce((s,t) => s + t.rMultiple, 0) / wins.length : 0;
+  const avgLoss = losses.length ? Math.abs(losses.reduce((s,t) => s + t.rMultiple, 0) / losses.length) : 0;
+  const expectancy = (winRate * avgWin) - ((1 - winRate) * avgLoss);
+  const grossProfit = wins.reduce((s,t) => s + t.rMultiple, 0);
+  const grossLoss = Math.abs(losses.reduce((s,t) => s + t.rMultiple, 0));
+  const profitFactor = grossLoss === 0 ? (grossProfit > 0 ? Infinity : 0) : grossProfit / grossLoss;
+  const ruleRate = trades.filter(t => t.ruleFollowed === 'Yes').length / n;
+  const totalR = trades.reduce((s,t) => s + t.rMultiple, 0);
+  return { n, winRate, avgWin, avgLoss, expectancy, profitFactor, ruleRate, totalR };
+}
+
+function render() {
+  // stats
+  const s = calcStats();
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="val">${s.n}</div><div class="lbl">Trades</div></div>
+    <div class="stat"><div class="val">${(s.winRate*100).toFixed(0)}%</div><div class="lbl">Win Rate</div></div>
+    <div class="stat"><div class="val" style="color:${s.expectancy >= 0 ? '#3fb950' : '#f85149'}">${s.expectancy.toFixed(2)}R</div><div class="lbl">Expectancy</div></div>
+    <div class="stat"><div class="val">${s.profitFactor === Infinity ? '∞' : s.profitFactor.toFixed(2)}</div><div class="lbl">Profit Factor</div></div>
+    <div class="stat"><div class="val" style="color:${s.ruleRate >= 0.8 ? '#3fb950' : '#d29922'}">${(s.ruleRate*100).toFixed(0)}%</div><div class="lbl">Rule Followed</div></div>
+    <div class="stat"><div class="val" style="color:${s.totalR >= 0 ? '#3fb950' : '#f85149'}">${s.totalR.toFixed(1)}R</div><div class="lbl">Total R</div></div>
+  `;
+
+  // table
+  const tbody = document.getElementById('tradeBody');
+  if (trades.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">No trades yet. Log your first one above.</td></tr>';
+  } else {
+    tbody.innerHTML = trades.slice().reverse().map(t => `
+      <tr>
+        <td>${t.date}</td>
+        <td>${t.instrument}</td>
+        <td>${t.direction}</td>
+        <td>${t.regime}</td>
+        <td>${t.setup}</td>
+        <td style="color:${t.rMultiple >= 0 ? '#3fb950' : '#f85149'};font-weight:600">${t.rMultiple > 0 ? '+' : ''}${t.rMultiple}R</td>
+        <td><span class="badge ${t.ruleFollowed === 'Yes' ? 'yes' : 'no'}">${t.ruleFollowed}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.notes.replace(/"/g,'&quot;')}">${t.notes || '—'}</td>
+        <td><button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteTrade(${t.id})">×</button></td>
+      </tr>
+    `).join('');
+  }
+
+  // chart
+  const ctx = document.getElementById('equityChart').getContext('2d');
+  if (window._chart) window._chart.destroy();
+  let cum = 0;
+  const labels = trades.map((t,i) => `#${i+1}`);
+  const data = trades.map(t => { cum += t.rMultiple; return cum; });
+  window._chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Cumulative R', data, borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', fill: true, tension: 0.1, pointRadius: trades.length > 50 ? 0 : 3 }] },
+    options: { responsive: true, plugins: { legend: { labels: { color: '#8b949e' } } }, scales: { x: { ticks: { color: '#484f58', maxTicksLimit: 20 } }, y: { ticks: { color: '#484f58' }, grid: { color: '#21262d' } } } }
+  });
+}
+
+// init date
+document.getElementById('date').value = new Date().toISOString().slice(0,10);
+render();
+</script>
+</body>
+</html>
