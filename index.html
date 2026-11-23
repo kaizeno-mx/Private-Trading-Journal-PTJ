@@ -62,7 +62,6 @@
   <div class="tab" data-tab="review" onclick="switchTab('review')">Weekly Review</div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="tab-dashboard">
   <div class="stats" id="stats"></div>
   <div class="card"><h2>Equity Curve (Cumulative R)</h2><div class="chart-wrap"><canvas id="equityChart" height="100"></canvas></div></div>
@@ -70,15 +69,12 @@
   <div class="card"><h2>Confidence Bucket Analysis (Bot Trades Only)</h2><div class="chart-wrap"><canvas id="confBucketChart" height="90"></canvas></div></div>
 </div>
 
-<!-- TRADE LOG -->
 <div id="tab-log" class="hidden">
   <div class="card">
     <h2>+ Log a Trade</h2>
     <div class="grid">
       <div><label>Date</label><input type="date" id="date"></div>
-      <div><label>Source</label>
-        <select id="source"><option value="bot">Bot signal</option><option value="manual">Manual trade</option></select>
-      </div>
+      <div><label>Source</label><select id="source"><option value="bot">Bot signal</option><option value="manual">Manual trade</option></select></div>
       <div><label>Instrument</label>
         <select id="instrument">
           <option>EURUSD</option><option>USDJPY</option><option>GBPUSD</option>
@@ -88,9 +84,7 @@
       </div>
       <div><label>Direction</label><select id="direction" onchange="updateCalc()"><option>Long</option><option>Short</option></select></div>
       <div><label>Regime</label>
-        <select id="regime">
-          <option>Risk-On</option><option>Risk-Off</option><option>Neutral</option><option>Choppy</option><option>Unclear</option>
-        </select>
+        <select id="regime"><option>Risk-On</option><option>Risk-Off</option><option>Neutral</option><option>Choppy</option><option>Unclear</option></select>
       </div>
       <div><label>Setup Type</label>
         <select id="setup">
@@ -99,9 +93,7 @@
         </select>
       </div>
       <div><label>Confidence % (bot only)</label><input type="number" id="confidence" placeholder="50" min="0" max="100"></div>
-      <div><label>Action</label>
-        <select id="action"><option value="taken">Taken</option><option value="passed">Passed</option></select>
-      </div>
+      <div><label>Action</label><select id="action"><option value="taken">Taken</option><option value="passed">Passed</option></select></div>
     </div>
 
     <div style="margin-top:14px;font-size:13px;color:#8b949e;font-weight:600;">Price levels (required for R verification)</div>
@@ -115,9 +107,7 @@
 
     <div class="grid" style="margin-top:10px;">
       <div><label>R Multiple (actual / would-have)</label><input type="number" step="0.1" id="rMultiple" placeholder="2.5"></div>
-      <div><label>Stop Type</label>
-        <select id="stopType"><option value="fixed">Fixed</option><option value="trailing">Trailing</option><option value="none">None</option></select>
-      </div>
+      <div><label>Stop Type</label><select id="stopType"><option value="fixed">Fixed</option><option value="trailing">Trailing</option><option value="none">None</option></select></div>
       <div><label>Rule Followed?</label><select id="ruleFollowed"><option>Yes</option><option>No</option></select></div>
     </div>
 
@@ -148,15 +138,12 @@
   </div>
 </div>
 
-<!-- SESSION LOG -->
 <div id="tab-sessions" class="hidden">
   <div class="card">
     <h2>+ Log a Session</h2>
     <div class="grid">
       <div><label>Date</label><input type="date" id="sessDate"></div>
-      <div><label>Session</label>
-        <select id="sessName"><option>Asian</option><option>London</option><option>NewYork</option></select>
-      </div>
+      <div><label>Session</label><select id="sessName"><option>Asian</option><option>London</option><option>NewYork</option></select></div>
       <div><label>Regime</label>
         <select id="sessRegime"><option>Risk-On</option><option>Risk-Off</option><option>Neutral</option><option>Choppy</option><option>Unclear</option></select>
       </div>
@@ -179,7 +166,6 @@
   </div>
 </div>
 
-<!-- WEEKLY REVIEW -->
 <div id="tab-review" class="hidden">
   <div class="card">
     <h2>Weekly Review</h2>
@@ -197,7 +183,6 @@
   </div>
   <div class="card"><h2>Saved Reviews</h2><div id="reviewList"></div></div>
 </div>
-
 <script>
 const TRADE_KEY = 'trading_journal_v3';
 const SESSION_KEY = 'trading_sessions_v1';
@@ -236,7 +221,7 @@ function updateCalc() {
   } else {
     const risk = dir === 'Long' ? (entry - sl) : (sl - entry);
     const reward = dir === 'Long' ? (tp - entry) : (entry - tp);
-    box.innerHTML = `Intended R: <strong>${r}R</strong> &nbsp;|&nbsp; Risk: ${risk.toFixed(2)} points &nbsp;|&nbsp; Reward: ${reward.toFixed(2)} points`;
+    box.innerHTML = 'Intended R: <strong>' + r + 'R</strong> &nbsp;|&nbsp; Risk: ' + risk.toFixed(2) + ' points &nbsp;|&nbsp; Reward: ' + reward.toFixed(2) + ' points';
   }
 }
 
@@ -255,9 +240,7 @@ function addTrade() {
     setup: document.getElementById('setup').value,
     confidence: parseInt(document.getElementById('confidence').value) || null,
     action: document.getElementById('action').value,
-    entryPrice: entry,
-    stopPrice: sl,
-    tpPrice: tp,
+    entryPrice: entry, stopPrice: sl, tpPrice: tp,
     riskNad: parseFloat(document.getElementById('riskNad').value) || null,
     intendedR: computeIntendedR(entry, sl, tp, dir),
     rMultiple: parseFloat(document.getElementById('rMultiple').value) || 0,
@@ -265,11 +248,9 @@ function addTrade() {
     ruleFollowed: document.getElementById('ruleFollowed').value,
     notes: document.getElementById('notes').value.trim()
   };
-  trades.push(t);
-  saveTrades();
+  trades.push(t); saveTrades();
   ['rMultiple','confidence','notes','entryPrice','stopPrice','tpPrice','riskNad'].forEach(id => document.getElementById(id).value = '');
-  updateCalc();
-  render();
+  updateCalc(); render();
 }
 
 function addSession() {
@@ -313,7 +294,7 @@ function clearAll() { if (!confirm('Delete ALL trade data? Export first if unsur
 function exportData() {
   if (trades.length === 0) { alert('No trades to export.'); return; }
   const headers = ['date','source','instrument','direction','regime','setup','confidence','action','entryPrice','stopPrice','tpPrice','riskNad','intendedR','rMultiple','stopType','ruleFollowed','notes'];
-  const rows = trades.map(t => headers.map(h => `"${String(t[h] ?? '').replace(/"/g,'""')}"`).join(','));
+  const rows = trades.map(t => headers.map(h => '"' + String(t[h] ?? '').replace(/"/g,'""') + '"').join(','));
   const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
@@ -345,15 +326,15 @@ function calcStats() {
 
 function renderStats() {
   const s = calcStats();
-  document.getElementById('stats').innerHTML = `
-    <div class="stat"><div class="val">${s.n}</div><div class="lbl">Trades</div></div>
-    <div class="stat"><div class="val">${s.taken}/${s.passed}</div><div class="lbl">Taken/Passed</div></div>
-    <div class="stat"><div class="val">${(s.winRate*100).toFixed(0)}%</div><div class="lbl">Win Rate</div></div>
-    <div class="stat"><div class="val" style="color:${s.expectancy >= 0 ? '#3fb950' : '#f85149'}">${s.expectancy.toFixed(2)}R</div><div class="lbl">Expectancy</div></div>
-    <div class="stat"><div class="val">${s.profitFactor === Infinity ? '∞' : s.profitFactor.toFixed(2)}</div><div class="lbl">Profit Factor</div></div>
-    <div class="stat"><div class="val" style="color:${s.ruleRate >= 0.8 ? '#3fb950' : '#d29922'}">${(s.ruleRate*100).toFixed(0)}%</div><div class="lbl">Rule Followed</div></div>
-    <div class="stat"><div class="val" style="color:${s.totalR >= 0 ? '#3fb950' : '#f85149'}">${s.totalR.toFixed(1)}R</div><div class="lbl">Total R</div></div>
-    <div class="stat"><div class="val" style="color:#f85149">${s.maxDD.toFixed(1)}R</div><div class="lbl">Max DD</div></div>`;
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="val">' + s.n + '</div><div class="lbl">Trades</div></div>' +
+    '<div class="stat"><div class="val">' + s.taken + '/' + s.passed + '</div><div class="lbl">Taken/Passed</div></div>' +
+    '<div class="stat"><div class="val">' + (s.winRate*100).toFixed(0) + '%</div><div class="lbl">Win Rate</div></div>' +
+    '<div class="stat"><div class="val" style="color:' + (s.expectancy >= 0 ? '#3fb950' : '#f85149') + '">' + s.expectancy.toFixed(2) + 'R</div><div class="lbl">Expectancy</div></div>' +
+    '<div class="stat"><div class="val">' + (s.profitFactor === Infinity ? '∞' : s.profitFactor.toFixed(2)) + '</div><div class="lbl">Profit Factor</div></div>' +
+    '<div class="stat"><div class="val" style="color:' + (s.ruleRate >= 0.8 ? '#3fb950' : '#d29922') + '">' + (s.ruleRate*100).toFixed(0) + '%</div><div class="lbl">Rule Followed</div></div>' +
+    '<div class="stat"><div class="val" style="color:' + (s.totalR >= 0 ? '#3fb950' : '#f85149') + '">' + s.totalR.toFixed(1) + 'R</div><div class="lbl">Total R</div></div>' +
+    '<div class="stat"><div class="val" style="color:#f85149">' + s.maxDD.toFixed(1) + 'R</div><div class="lbl">Max DD</div></div>';
 }
 
 function renderTrades() {
@@ -361,61 +342,59 @@ function renderTrades() {
   const list = filter === 'all' ? trades : trades.filter(t => t.source === filter);
   const tbody = document.getElementById('tradeBody');
   if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="17" class="empty">No trades yet.</td></tr>'; return; }
-  tbody.innerHTML = list.slice().reverse().map(t => `
-    <tr>
-      <td>${t.date}</td>
-      <td><span class="badge ${t.source}">${t.source}</span></td>
-      <td>${t.instrument}</td>
-      <td>${t.direction}</td>
-      <td>${t.regime}</td>
-      <td>${t.setup}</td>
-      <td>${t.confidence ? t.confidence + '%' : '—'}</td>
-      <td><span class="badge ${t.action}">${t.action}</span></td>
-      <td>${t.entryPrice ?? '—'}</td>
-      <td>${t.stopPrice ?? '—'}</td>
-      <td>${t.tpPrice ?? '—'}</td>
-      <td>${t.intendedR != null ? t.intendedR + 'R' : '—'}</td>
-      <td style="color:${t.rMultiple >= 0 ? '#3fb950' : '#f85149'};font-weight:600">${t.rMultiple > 0 ? '+' : ''}${t.rMultiple}R</td>
-      <td>${t.stopType}</td>
-      <td><span class="badge ${t.ruleFollowed === 'Yes' ? 'yes' : 'no'}">${t.ruleFollowed}</span></td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(t.notes||'').replace(/"/g,'&quot;')}">${t.notes || '—'}</td>
-      <td><button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteTrade(${t.id})">×</button></td>
-    </tr>`).join('');
+  tbody.innerHTML = list.slice().reverse().map(t =>
+    '<tr>' +
+    '<td>' + t.date + '</td>' +
+    '<td><span class="badge ' + t.source + '">' + t.source + '</span></td>' +
+    '<td>' + t.instrument + '</td>' +
+    '<td>' + t.direction + '</td>' +
+    '<td>' + t.regime + '</td>' +
+    '<td>' + t.setup + '</td>' +
+    '<td>' + (t.confidence ? t.confidence + '%' : '—') + '</td>' +
+    '<td><span class="badge ' + t.action + '">' + t.action + '</span></td>' +
+    '<td>' + (t.entryPrice ?? '—') + '</td>' +
+    '<td>' + (t.stopPrice ?? '—') + '</td>' +
+    '<td>' + (t.tpPrice ?? '—') + '</td>' +
+    '<td>' + (t.intendedR != null ? t.intendedR + 'R' : '—') + '</td>' +
+    '<td style="color:' + (t.rMultiple >= 0 ? '#3fb950' : '#f85149') + ';font-weight:600">' + (t.rMultiple > 0 ? '+' : '') + t.rMultiple + 'R</td>' +
+    '<td>' + t.stopType + '</td>' +
+    '<td><span class="badge ' + (t.ruleFollowed === 'Yes' ? 'yes' : 'no') + '">' + t.ruleFollowed + '</span></td>' +
+    '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (t.notes||'').replace(/"/g,'&quot;') + '">' + (t.notes || '—') + '</td>' +
+    '<td><button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteTrade(' + t.id + ')">×</button></td>' +
+    '</tr>').join('');
 }
 
 function renderSessions() {
   const tbody = document.getElementById('sessionBody');
   if (sessions.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No sessions logged yet.</td></tr>'; return; }
-  tbody.innerHTML = sessions.slice().reverse().map(s => `
-    <tr><td>${s.date}</td><td>${s.session}</td><td>${s.regime}</td><td>${s.vix}</td><td>${s.dxy}</td><td>${s.signals}</td>
-    <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.notes || '—'}</td>
-    <td><button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteSession(${s.id})">×</button></td></tr>`).join('');
+  tbody.innerHTML = sessions.slice().reverse().map(s =>
+    '<tr><td>' + s.date + '</td><td>' + s.session + '</td><td>' + s.regime + '</td><td>' + s.vix + '</td><td>' + s.dxy + '</td><td>' + s.signals + '</td>' +
+    '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (s.notes || '—') + '</td>' +
+    '<td><button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteSession(' + s.id + ')">×</button></td></tr>').join('');
 }
 
 function renderReviews() {
   const el = document.getElementById('reviewList');
   if (reviews.length === 0) { el.innerHTML = '<p class="empty">No reviews saved yet.</p>'; return; }
-  el.innerHTML = reviews.slice().reverse().map(r => `
-    <div style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:12px;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-        <strong>Week ending ${r.weekEnding}</strong>
-        <button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteReview(${r.id})">×</button>
-      </div>
-      <div style="font-size:12px;color:#8b949e;margin-bottom:8px;">Taken: ${r.taken} | Passed: ${r.passed} | Rule: ${r.rulePct}% | Net R: ${r.netR}</div>
-      <div style="font-size:12px;"><strong>Worked:</strong> ${r.worked || '—'}</div>
-      <div style="font-size:12px;"><strong>Didn't:</strong> ${r.didnt || '—'}</div>
-      <div style="font-size:12px;"><strong>Lessons:</strong> ${r.lessons || '—'}</div>
-    </div>`).join('');
+  el.innerHTML = reviews.slice().reverse().map(r =>
+    '<div style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:12px;margin-bottom:10px;">' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><strong>Week ending ' + r.weekEnding + '</strong>' +
+    '<button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteReview(' + r.id + ')">×</button></div>' +
+    '<div style="font-size:12px;color:#8b949e;margin-bottom:8px;">Taken: ' + r.taken + ' | Passed: ' + r.passed + ' | Rule: ' + r.rulePct + '% | Net R: ' + r.netR + '</div>' +
+    '<div style="font-size:12px;"><strong>Worked:</strong> ' + (r.worked || '—') + '</div>' +
+    '<div style="font-size:12px;"><strong>Didn\'t:</strong> ' + (r.didnt || '—') + '</div>' +
+    '<div style="font-size:12px;"><strong>Lessons:</strong> ' + (r.lessons || '—') + '</div>' +
+    '</div>').join('');
 }
 
 function renderCharts() {
   const ctx1 = document.getElementById('equityChart').getContext('2d');
   if (window._equity) window._equity.destroy();
   let cum = 0;
-  const labels = trades.map((t,i) => `#${i+1}`);
+  const labels = trades.map((t,i) => '#' + (i+1));
   const data = trades.map(t => { cum += t.rMultiple; return cum; });
   window._equity = new Chart(ctx1, { type:'line',
-    data:{ labels, datasets:[{ label:'Cumulative R', data, borderColor:'#58a6ff', backgroundColor:'rgba(88,166,255,0.1)', fill:true, tension:0.1, pointRadius: trades.length > 50 ? 0 : 3 }] },
+    data:{ labels: labels, datasets:[{ label:'Cumulative R', data: data, borderColor:'#58a6ff', backgroundColor:'rgba(88,166,255,0.1)', fill:true, tension:0.1, pointRadius: trades.length > 50 ? 0 : 3 }] },
     options:{ responsive:true, plugins:{ legend:{ labels:{ color:'#8b949e' } } }, scales:{ x:{ ticks:{ color:'#484f58', maxTicksLimit:20 } }, y:{ ticks:{ color:'#484f58' }, grid:{ color:'#21262d' } } } } });
 
   const buckets = { '≤-1R':0,'-1..0':0,'0..1':0,'1..3':0,'3..5':0,'5R+':0 };
@@ -432,8 +411,35 @@ function renderCharts() {
   const botTrades = trades.filter(t => t.source === 'bot' && t.confidence != null);
   const ranges = ['35-45','45-55','55-65','65-75','75+'];
   const expData = ranges.map(range => {
-    const [lo, hi] = range.includes('+') ? [parseInt(range), 200] : range.split('-').map(Number);
+    const parts = range.includes('+') ? [parseInt(range), 200] : range.split('-').map(Number);
+    const lo = parts[0], hi = parts[1];
     const group = botTrades.filter(t => t.confidence >= lo && t.confidence < hi);
     if (group.length === 0) return 0;
     const wins = group.filter(t => t.rMultiple > 0), losses = group.filter(t => t.rMultiple < 0);
-    const wr = wins.length / group
+    const wr = wins.length / group.length;
+    const aw = wins.length ? wins.reduce((s,t)=>s+t.rMultiple,0)/wins.length : 0;
+    const al = losses.length ? Math.abs(losses.reduce((s,t)=>s+t.rMultiple,0)/losses.length) : 0;
+    return parseFloat((wr*aw - (1-wr)*al).toFixed(2));
+  });
+  const ctx3 = document.getElementById('confBucketChart').getContext('2d');
+  if (window._confBucket) window._confBucket.destroy();
+  window._confBucket = new Chart(ctx3, { type:'bar',
+    data:{ labels: ranges, datasets:[{ label:'Expectancy (R)', data: expData, backgroundColor: expData.map(v => v >= 0 ? '#3fb950' : '#f85149') }] },
+    options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#8b949e' } }, y:{ ticks:{ color:'#484f58' }, grid:{ color:'#21262d' } } } } });
+}
+
+function render() {
+  renderStats();
+  renderTrades();
+  renderSessions();
+  renderReviews();
+  renderCharts();
+}
+
+document.getElementById('date').value = new Date().toISOString().slice(0,10);
+document.getElementById('sessDate').value = new Date().toISOString().slice(0,10);
+document.getElementById('revDate').value = new Date().toISOString().slice(0,10);
+render();
+</script>
+</body>
+</html>
