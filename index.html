@@ -48,6 +48,7 @@
   .hidden { display: none; }
   .calc-box { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin-top: 10px; font-size: 13px; color: #8b949e; }
   .calc-box strong { color: #58a6ff; }
+  .edit-mode { border-color: #d29922 !important; box-shadow: 0 0 0 2px rgba(210,153,34,0.2); }
 </style>
 </head>
 <body>
@@ -70,8 +71,8 @@
 </div>
 
 <div id="tab-log" class="hidden">
-  <div class="card">
-    <h2>+ Log a Trade</h2>
+  <div class="card" id="tradeFormCard">
+    <h2 id="formTitle">+ Log a Trade</h2>
     <div class="grid">
       <div><label>Date</label><input type="date" id="date"></div>
       <div><label>Source</label><select id="source"><option value="bot">Bot signal</option><option value="manual">Manual trade</option></select></div>
@@ -113,7 +114,8 @@
 
     <label style="margin-top:10px;">Notes (why entry, catalyst, lesson)</label>
     <textarea id="notes" placeholder="Bot signal: ... | Human filter: ... | Catalyst: ... | What happened: ..."></textarea>
-    <button onclick="addTrade()">Save Trade</button>
+    <button id="saveBtn" onclick="addTrade()">Save Trade</button>
+    <button id="cancelEditBtn" onclick="cancelEdit()" style="display:none;background:#6e7681;margin-left:8px;">Cancel Edit</button>
     <button class="blue" onclick="exportData()" style="margin-left:8px;">Export CSV</button>
     <button class="danger" onclick="clearAll()" style="margin-left:8px;">Clear All Data</button>
   </div>
@@ -183,6 +185,7 @@
   </div>
   <div class="card"><h2>Saved Reviews</h2><div id="reviewList"></div></div>
 </div>
+
 <script>
 const TRADE_KEY = 'trading_journal_v3';
 const SESSION_KEY = 'trading_sessions_v1';
@@ -191,6 +194,7 @@ const REVIEW_KEY = 'trading_reviews_v1';
 let trades = JSON.parse(localStorage.getItem(TRADE_KEY) || '[]');
 let sessions = JSON.parse(localStorage.getItem(SESSION_KEY) || '[]');
 let reviews = JSON.parse(localStorage.getItem(REVIEW_KEY) || '[]');
+let editingId = null;
 
 function saveTrades() { localStorage.setItem(TRADE_KEY, JSON.stringify(trades)); }
 function saveSessions() { localStorage.setItem(SESSION_KEY, JSON.stringify(sessions)); }
@@ -231,7 +235,7 @@ function addTrade() {
   const sl = parseFloat(document.getElementById('stopPrice').value) || null;
   const tp = parseFloat(document.getElementById('tpPrice').value) || null;
   const t = {
-    id: Date.now(),
+    id: editingId || Date.now(),
     date: document.getElementById('date').value || new Date().toISOString().slice(0,10),
     source: document.getElementById('source').value,
     instrument: document.getElementById('instrument').value,
@@ -248,9 +252,59 @@ function addTrade() {
     ruleFollowed: document.getElementById('ruleFollowed').value,
     notes: document.getElementById('notes').value.trim()
   };
-  trades.push(t); saveTrades();
+  if (editingId) {
+    const idx = trades.findIndex(x => x.id === editingId);
+    if (idx >= 0) trades[idx] = t;
+    editingId = null;
+    document.getElementById('formTitle').textContent = '+ Log a Trade';
+    document.getElementById('saveBtn').textContent = 'Save Trade';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    document.getElementById('tradeFormCard').classList.remove('edit-mode');
+  } else {
+    trades.push(t);
+  }
+  saveTrades();
   ['rMultiple','confidence','notes','entryPrice','stopPrice','tpPrice','riskNad'].forEach(id => document.getElementById(id).value = '');
   updateCalc(); render();
+}
+
+function editTrade(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  editingId = id;
+  document.getElementById('date').value = t.date || '';
+  document.getElementById('source').value = t.source || 'bot';
+  document.getElementById('instrument').value = t.instrument || 'EURUSD';
+  document.getElementById('direction').value = t.direction || 'Long';
+  document.getElementById('regime').value = t.regime || 'Neutral';
+  document.getElementById('setup').value = t.setup || 'Other';
+  document.getElementById('confidence').value = t.confidence || '';
+  document.getElementById('action').value = t.action || 'taken';
+  document.getElementById('entryPrice').value = t.entryPrice || '';
+  document.getElementById('stopPrice').value = t.stopPrice || '';
+  document.getElementById('tpPrice').value = t.tpPrice || '';
+  document.getElementById('riskNad').value = t.riskNad || '';
+  document.getElementById('rMultiple').value = t.rMultiple || '';
+  document.getElementById('stopType').value = t.stopType || 'fixed';
+  document.getElementById('ruleFollowed').value = t.ruleFollowed || 'Yes';
+  document.getElementById('notes').value = t.notes || '';
+  document.getElementById('formTitle').textContent = '✏️ Editing trade — update outcome';
+  document.getElementById('saveBtn').textContent = 'Update Trade';
+  document.getElementById('cancelEditBtn').style.display = 'inline-block';
+  document.getElementById('tradeFormCard').classList.add('edit-mode');
+  updateCalc();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  switchTab('log');
+}
+
+function cancelEdit() {
+  editingId = null;
+  ['rMultiple','confidence','notes','entryPrice','stopPrice','tpPrice','riskNad'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('formTitle').textContent = '+ Log a Trade';
+  document.getElementById('saveBtn').textContent = 'Save Trade';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  document.getElementById('tradeFormCard').classList.remove('edit-mode');
+  updateCalc();
 }
 
 function addSession() {
@@ -360,7 +414,7 @@ function renderTrades() {
     '<td>' + t.stopType + '</td>' +
     '<td><span class="badge ' + (t.ruleFollowed === 'Yes' ? 'yes' : 'no') + '">' + t.ruleFollowed + '</span></td>' +
     '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (t.notes||'').replace(/"/g,'&quot;') + '">' + (t.notes || '—') + '</td>' +
-    '<td><button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteTrade(' + t.id + ')">×</button></td>' +
+    '<td style="white-space:nowrap;"><button class="blue" style="padding:4px 8px;font-size:11px;margin:0 4px 0 0" onclick="editTrade(' + t.id + ')">✎</button><button class="danger" style="padding:4px 8px;font-size:11px;margin:0" onclick="deleteTrade(' + t.id + ')">×</button></td>' +
     '</tr>').join('');
 }
 
